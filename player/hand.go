@@ -1,7 +1,8 @@
-package main
+package player
 
 import (
 	"errors"
+	"poker_game/card"
 	"sort"
 )
 
@@ -30,18 +31,18 @@ func (h HandRank) String() string {
 
 type HandResult struct {
 	Rank     HandRank
-	Tiebreak []Rank
+	Tiebreak []card.Rank
 }
 
 // Evaluate ranks a 5-card poker hand. Tiebreak ranks are returned in
 // descending priority order so two HandResults of the same Rank can be
 // compared by lexicographic order of Tiebreak.
-func Evaluate(hand []Card) (HandResult, error) {
+func Evaluate(hand []card.Card) (HandResult, error) {
 	if len(hand) != 5 {
 		return HandResult{}, errors.New("hand must contain exactly 5 cards")
 	}
 
-	ranks := make([]Rank, 5)
+	ranks := make([]card.Rank, len(hand))
 	for i, c := range hand {
 		ranks[i] = c.Rank
 	}
@@ -54,10 +55,10 @@ func Evaluate(hand []Card) (HandResult, error) {
 	groups := groupByCount(counts)
 
 	switch {
-	case flush && straight && straightHigh == Ace:
-		return HandResult{Rank: RoyalFlush, Tiebreak: []Rank{straightHigh}}, nil
+	case flush && straight && straightHigh == card.Ace:
+		return HandResult{Rank: RoyalFlush, Tiebreak: []card.Rank{straightHigh}}, nil
 	case flush && straight:
-		return HandResult{Rank: StraightFlush, Tiebreak: []Rank{straightHigh}}, nil
+		return HandResult{Rank: StraightFlush, Tiebreak: []card.Rank{straightHigh}}, nil
 	case groups[4] != nil:
 		return HandResult{Rank: FourOfAKind, Tiebreak: append(groups[4], groups[1]...)}, nil
 	case groups[3] != nil && groups[2] != nil:
@@ -65,7 +66,7 @@ func Evaluate(hand []Card) (HandResult, error) {
 	case flush:
 		return HandResult{Rank: Flush, Tiebreak: ranks}, nil
 	case straight:
-		return HandResult{Rank: Straight, Tiebreak: []Rank{straightHigh}}, nil
+		return HandResult{Rank: Straight, Tiebreak: []card.Rank{straightHigh}}, nil
 	case groups[3] != nil:
 		return HandResult{Rank: ThreeOfAKind, Tiebreak: append(groups[3], groups[1]...)}, nil
 	case len(groups[2]) == 2:
@@ -96,7 +97,7 @@ func Compare(a, b HandResult) int {
 	return 0
 }
 
-func isFlush(hand []Card) bool {
+func isFlush(hand []card.Card) bool {
 	s := hand[0].Suit
 	for _, c := range hand[1:] {
 		if c.Suit != s {
@@ -110,9 +111,9 @@ func isFlush(hand []Card) bool {
 // run of consecutive ranks (e.g. 9-10-J-Q-K → King, 10-J-Q-K-A → Ace),
 // and the wheel A-2-3-4-5 is a special case where Ace plays low and the
 // straight's high card is Five.
-func isStraight(ranks []Rank) (bool, Rank) {
+func isStraight(ranks []card.Rank) (bool, card.Rank) {
 	if isWheel(ranks) {
-		return true, Five
+		return true, card.Five
 	}
 	for i := range len(ranks) - 1 {
 		if ranks[i]-1 != ranks[i+1] {
@@ -122,12 +123,12 @@ func isStraight(ranks []Rank) (bool, Rank) {
 	return true, ranks[0]
 }
 
-func isWheel(ranks []Rank) bool {
-	if ranks[0] != Ace {
+func isWheel(ranks []card.Rank) bool {
+	if ranks[0] != card.Ace {
 		return false
 	}
 	for i := 1; i < len(ranks); i++ {
-		want := Rank(len(ranks) - i + 1)
+		want := card.Rank(len(ranks) - i + 1)
 		if ranks[i] != want {
 			return false
 		}
@@ -135,8 +136,8 @@ func isWheel(ranks []Rank) bool {
 	return true
 }
 
-func rankCounts(ranks []Rank) map[Rank]int {
-	m := make(map[Rank]int, 5)
+func rankCounts(ranks []card.Rank) map[card.Rank]int {
+	m := make(map[card.Rank]int, 5)
 	for _, r := range ranks {
 		m[r]++
 	}
@@ -145,8 +146,8 @@ func rankCounts(ranks []Rank) map[Rank]int {
 
 // groupByCount returns a map from count -> ranks with that count, each rank
 // list sorted descending so the strongest group sits in front.
-func groupByCount(counts map[Rank]int) map[int][]Rank {
-	out := make(map[int][]Rank)
+func groupByCount(counts map[card.Rank]int) map[int][]card.Rank {
+	out := make(map[int][]card.Rank)
 	for r, c := range counts {
 		out[c] = append(out[c], r)
 	}

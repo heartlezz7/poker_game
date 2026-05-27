@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"poker_game/card"
+	"poker_game/player"
 	"strings"
 )
 
@@ -10,19 +12,13 @@ const (
 	numPlayers   = 4
 )
 
-type Player struct {
-	Name   string
-	Hand   []Card
-	Result HandResult
-}
-
 func main() {
-	deck := NewDeck()
+	deck := card.NewDeck()
 	deck.Shuffle()
 
-	players := make([]*Player, numPlayers)
+	players := make([]*player.Player, numPlayers)
 	for i := range players {
-		players[i] = &Player{Name: fmt.Sprintf("Player %d", i+1)}
+		players[i] = player.NewPlayer(fmt.Sprintf("Player %d", i+1))
 	}
 
 	if err := deal(deck, players); err != nil {
@@ -31,7 +27,7 @@ func main() {
 	}
 
 	for _, p := range players {
-		res, err := Evaluate(p.Hand)
+		res, err := player.Evaluate(p.Hand)
 		if err != nil {
 			fmt.Println("error:", err)
 			return
@@ -54,7 +50,7 @@ func main() {
 	}
 }
 
-func deal(deck *Deck, players []*Player) error {
+func deal(deck *card.Deck, players []*player.Player) error {
 	for _, p := range players {
 		cards, err := deck.DrawN(cardsPerHand)
 		if err != nil {
@@ -65,7 +61,7 @@ func deal(deck *Deck, players []*Player) error {
 	return nil
 }
 
-func formatHand(hand []Card) string {
+func formatHand(hand []card.Card) string {
 	parts := make([]string, len(hand))
 	for i, c := range hand {
 		parts[i] = c.String()
@@ -73,13 +69,13 @@ func formatHand(hand []Card) string {
 	return strings.Join(parts, " ")
 }
 
-func findWinners(players []*Player) []*Player {
-	winners := []*Player{players[0]}
+func findWinners(players []*player.Player) []*player.Player {
+	winners := []*player.Player{players[0]}
 	for _, p := range players[1:] {
-		cmp := Compare(p.Result, winners[0].Result)
+		cmp := player.Compare(p.Result, winners[0].Result)
 		switch {
 		case cmp > 0:
-			winners = []*Player{p}
+			winners = []*player.Player{p}
 		case cmp == 0:
 			winners = append(winners, p)
 		}
